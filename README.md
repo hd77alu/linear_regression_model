@@ -1,4 +1,4 @@
-# linear_regression_model
+# linear Regression Model to Predict CO2 emissions in East Africa
 
 ## Mission And Problem
 - My mission focuses on Climate Change and how to use technologies to address environmental challenges in Africa.
@@ -19,15 +19,15 @@ This project uses historical country-level CO2 emissions and socioeconomic indic
 
 ## Project Structure
 ```text
-summative/
-	API/
+├── summative/
+	├── API/
 		prediction.py
-	FlutterApp/
-	linear_regression/
+	├── FlutterApp/
+	├── linear_regression/
 		multivariate.ipynb
-		data/
+		├── data/
 			africa-co2-emissions.csv
-		final_model/
+		├── final_model/
 			best_linear_regression_model.joblib
 ```
 
@@ -88,12 +88,15 @@ This step ensures that the model receives clean, consistent numeric inputs and t
 ### 3. Exploratory Data Analysis (EDA)
 EDA was used to validate assumptions and guide feature decisions:
 1. Correlation heatmap to inspect relationships between predictors and the target.
+
 ![Correlation heatmap](https://github.com/hd77alu/Portfolio101/blob/a64e5b063f134628598806aa80e6a1d73e127f36/images/eastAfrica-dataset-heatmap.png)
 
 2. Histograms to understand the distribution and spread of key variables.
+
 ![Histograms for variable distributions](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-variable-distributions.png)
 
 3. Scatter plots to inspect directional patterns and potential linear relationships.
+
 ![Scatterplots (relationship view)](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-scatterplots.png)
 
 **These visualizations were not only descriptive; they directly informed which variables were likely to be useful and where multicollinearity/leakage risks might appear.**
@@ -145,6 +148,7 @@ The implementation includes:
 The best-performing model (lowest loss) was selected automatically from the evaluation table.
 
 ### 8. Visualization of the Final Linear Fit
+
 ![Linear Regression Fitted Line on Test Data](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-fitted-line.png)
 
 A dedicated scatter plot was implemented to show the fitted linear relationship after training the Linear Regression model.
