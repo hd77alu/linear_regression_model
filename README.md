@@ -1,12 +1,12 @@
 # linear_regression_model
 
 ## Mission And Problem
-My mission is focused on Climate Change and how to use technologies to address environmental challenges in Africa.
-The problem tackled here is predicting CO2 emissions trends to support better climate-mitigation planning.
-The goal is to contribute practical, data-driven tools that support Africa's efforts in effective climate adaptation.
+- My mission focuses on Climate Change and how to use technologies to address environmental challenges in Africa.
+- The problem addressed here is the prediction of CO2 emissions trends to support improved climate-mitigation planning.
+- The goal is to contribute practical, data-driven tools that support Africa's efforts in effective climate adaptation.
 
 ## Dataset Information
-This project uses historical country-level CO2 emissions and socioeconomic indicators from 200 -2020 to create a model that predicts total CO2 emissions excluding LUCF in East Africa.
+This project uses historical country-level CO2 emissions and socioeconomic indicators from 2000 to 2020 to create a model that predicts total CO2 emissions excluding LUCF in East Africa.
 
 
 **Dataset:** `africa-co2-emissions.csv`
@@ -81,23 +81,28 @@ The notebook implementation follows a structured preprocessing pipeline:
 3. Filter records to Eastern Africa only.
 4. Convert selected columns to numeric types using safe coercion.
 5. Drop highly sparse columns (such as Fugitive Emissions) when needed.
-6. Fill remaining numeric missing values with median imputation.
+6. Fill the remaining numeric missing values with median imputation.
 
 This step ensures that the model receives clean, consistent numeric inputs and that downstream analysis is reproducible.
 
 ### 3. Exploratory Data Analysis (EDA)
 EDA was used to validate assumptions and guide feature decisions:
 1. Correlation heatmap to inspect relationships between predictors and the target.
-2. Histograms to understand distribution and spread of key variables.
-3. Scatter plots to inspect directional patterns and potential linear relationships.
+![Correlation heatmap](https://github.com/hd77alu/Portfolio101/blob/a64e5b063f134628598806aa80e6a1d73e127f36/images/eastAfrica-dataset-heatmap.png)
 
-These visualizations were not only descriptive; they directly informed which variables were likely to be useful and where multicollinearity/leakage risks might appear.
+2. Histograms to understand the distribution and spread of key variables.
+![Histograms for variable distributions](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-variable-distributions.png)
+
+3. Scatter plots to inspect directional patterns and potential linear relationships.
+![Scatterplots (relationship view)](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-scatterplots.png)
+
+**These visualizations were not only descriptive; they directly informed which variables were likely to be useful and where multicollinearity/leakage risks might appear.**
 
 ### 4. Feature Engineering And Selection
 Feature engineering was implemented with explicit decision logic:
 1. Build an intermediate feature-engineering dataframe.
 2. Drop columns with redundancy or leakage risk.
-3. Create derived features (for example, population density) and test usefulness.
+3. Create derived features (for example, population density) and test their usefulness.
 4. Rank numeric candidates by correlation strength to the target.
 5. Finalize a decomposition-aware set of predictors for training.
 
@@ -139,7 +144,9 @@ The implementation includes:
 
 The best-performing model (lowest loss) was selected automatically from the evaluation table.
 
-### 8. Visualization Of Final Linear Fit
+### 8. Visualization of the Final Linear Fit
+![Linear Regression Fitted Line on Test Data](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-fitted-line.png)
+
 A dedicated scatter plot was implemented to show the fitted linear relationship after training the Linear Regression model.
 For clarity, the fitted line is visualized against a chosen feature slice (Transportation (Mt)) while other features are held at baseline values.
 This provides a readable 2D interpretation of a multivariate model.
