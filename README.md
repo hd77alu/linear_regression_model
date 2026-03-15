@@ -1,6 +1,6 @@
-# linear Regression Model to Predict CO2 emissions in East Africa
+# linear Regression Model to Predict CO2 Emissions in East Africa
 
-## Mission And Problem
+## Description of Mission and Problem
 - My mission focuses on Climate Change and how to use technologies to address environmental challenges in Africa.
 - The problem addressed here is the prediction of CO2 emissions trends to support improved climate-mitigation planning.
 - The goal is to contribute practical, data-driven tools that support Africa's efforts in effective climate adaptation.
