@@ -81,7 +81,9 @@ The notebook implementation follows a structured preprocessing pipeline:
 3. Filter records to Eastern Africa only.
 4. Convert selected columns to numeric types using safe coercion.
 5. Drop highly sparse columns (such as Fugitive Emissions) when needed.
-6. Fill the remaining numeric missing values with median imputation.
+6. Fill remaining predictor missing values using **country-wise median imputation**.
+7. Apply a global median fallback for any predictor values still missing after country-level fill.
+8. Drop rows where the target is missing to keep model prediction valid.
 
 This step ensures that the model receives clean, consistent numeric inputs and that downstream analysis is reproducible.
 

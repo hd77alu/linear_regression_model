@@ -155,11 +155,18 @@ class EmissionsPredictor:
             if "Fugitive Emissions (Mt)" in numeric_cols:
                 numeric_cols.remove("Fugitive Emissions (Mt)")
 
-        # Fill numeric missing values exactly as in training notebook.
-        existing_numeric = [c for c in numeric_cols if c in df_east.columns]
-        df_east[existing_numeric] = df_east[existing_numeric].fillna(
-            df_east[existing_numeric].median(numeric_only=True)
+        # Country-wise median imputation for predictors (excluding target).
+        predictor_cols = [c for c in numeric_cols if c != TARGET_COL and c in df_east.columns]
+        country_medians = df_east.groupby("Country")[predictor_cols].transform("median")
+        df_east[predictor_cols] = df_east[predictor_cols].fillna(country_medians)
+
+        # Global median fallback for any remaining missing predictor values.
+        df_east[predictor_cols] = df_east[predictor_cols].fillna(
+            df_east[predictor_cols].median(numeric_only=True)
         )
+
+        # Keep only rows with target available for supervised learning.
+        df_east = df_east.dropna(subset=[TARGET_COL])
 
         # Repeat feature-engineering drops and derived column creation.
         fe_df = df_east.copy()
