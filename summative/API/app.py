@@ -164,10 +164,10 @@ async def lifespan(_: FastAPI):
         render_url = os.getenv("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
         if render_url:
             print(f"\n[startup] Render deployment detected. API URL: {render_url}")
-            print(f"[startup] Swagger UI: {render_url}/docs\n")
+            print(f"[startup] Render Swagger UI: {render_url}/docs\n")
         else:
             print("\n[startup] Render deployment detected. API bound to $PORT.")
-            print("[startup] Swagger UI: <your-render-service-url>/docs\n")
+            print("[startup] Render Swagger UI: <your-render-service-url>/docs\n")
     else:
         print("\n[startup] Local development mode detected.")
         print("[startup] API URL: http://127.0.0.1:8000")
