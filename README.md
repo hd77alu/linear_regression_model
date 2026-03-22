@@ -20,15 +20,19 @@ This project uses historical country-level CO2 emissions and socioeconomic indic
 ## Project Structure
 ```text
 ├── summative/
-	├── API/
-		prediction.py
-	├── FlutterApp/
-	├── linear_regression/
-		multivariate.ipynb
-		├── data/
-			africa-co2-emissions.csv
-		├── final_model/
-			best_linear_regression_model.joblib
+│   ├── API/
+│   │   ├── app.py
+│   │   ├── prediction.py
+│   │   ├── requirements.txt
+│   ├── FlutterApp/
+│   └── linear_regression/
+│       ├── multivariate.ipynb
+│       ├── data/
+│       │   └── africa-co2-emissions.csv
+│       └── final_model/
+│           ├── best_linear_regression_model.joblib
+│           └── fastapi_model_artifacts.joblib
+└── README.md
 ```
 
 ## Setup Instructions
@@ -39,8 +43,8 @@ git clone https://github.com/hd77alu/linear_regression_model
 cd linear_regression_model
 ```
 2. Create and activate a Python virtual environment.
-3. Install dependencies:
-	 - `pip install numpy pandas scikit-learn matplotlib joblib`
+3. Install notebook dependencies:
+	 - `pip install numpy pandas scikit-learn matplotlib joblib jupyter`
 
 ## How to Use the Notebook
 
@@ -67,6 +71,42 @@ jupyter notebook
 4. Click on `multivariate.ipynb`
 5. Select Run all
 6. Select Virtual Python kernel when prompted
+
+## How to Run API Locally
+
+1. Install API dependencies (from repository root):
+```bash
+pip install -r summative/API/requirements.txt
+```
+
+2. Start the FastAPI server (from repository root):
+```bash
+python -m uvicorn summative.API.app:app --reload --host 0.0.0.0 --port 8000
+```
+
+3. Verify service health:
+- API root: `http://127.0.0.1:8000/`
+- Swagger UI: `http://127.0.0.1:8000/docs`
+
+## Test API with Swagger UI
+
+1. Open `http://127.0.0.1:8000/docs`.
+2. Expand `POST /predict` and click **Try it out**.
+3. Use a sample payload:
+```json
+{
+	"country": "Kenya",
+	"year": 2020,
+	"population": 53771300,
+	"transportation_mt": 5.1,
+	"manufacturing_construction_mt": 2.3,
+	"electricity_heat_mt": 3.8,
+	"building_mt": 1.7
+}
+```
+4. Click **Execute** and inspect `prediction_mt` in the response.
+5. For multi-row scoring, test `POST /predict/batch`.
+6. For model refresh with labeled rows, test `POST /retrain`.
 
 ## Project Implementation
 
@@ -157,16 +197,23 @@ A dedicated scatter plot was implemented to show the fitted linear relationship 
 For clarity, the fitted line is visualized against a chosen feature slice (Transportation (Mt)) while other features are held at baseline values.
 This provides a readable 2D interpretation of a multivariate model.
 
-### 9. Model Persistence And Inference Script
+### 9. Model Persistence, Inference Script, And API Layer
 After selection, the best model is saved to:
 - `summative/linear_regression/final_model/best_linear_regression_model.joblib`
+- `summative/linear_regression/final_model/fastapi_model_artifacts.joblib`
 
-To support future backend/API integration, a standalone inference script was built:
+To support backend integration, a standalone inference module was built:
 - `summative/API/prediction.py`
 
-The script:
+The module:
 1. Loads the saved model.
-2. Rebuilds the same preprocessing logic used during training.
-3. Validates typed input payloads.
-4. Supports both single and batch predictions.
-5. Returns prediction output in JSON-friendly format.
+2. Reuses notebook-equivalent preprocessing for training-frame construction.
+3. Saves and reloads preprocessing artifacts (scaler and training columns) so inference remains consistent with training.
+4. Validates typed input payloads.
+5. Supports both single and batch predictions.
+
+The API service in `summative/API/app.py`:
+1. Exposes `/predict`, `/predict/batch`, and `/retrain` endpoints.
+2. Uses Pydantic request schemas for validation.
+3. Delegates model/preprocessing logic to `prediction.py`.
+4. Supports CORS configuration through the `ALLOWED_ORIGINS` environment variable.
