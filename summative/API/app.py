@@ -148,15 +148,30 @@ state = ModelState()
 state_lock = Lock()
 
 
+def _is_render_runtime() -> bool:
+    # Render sets service-level env vars in deployed containers.
+    return bool(os.getenv("RENDER") or os.getenv("RENDER_SERVICE_ID"))
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Initialize model artifacts once when application starts.
     with state_lock:
         _load_or_initialize()
 
-    # Helpful local access URLs for development runs.
-    print("\nAPI is running on the following URL: http://127.0.0.1:8000")
-    print("Swagger UI: http://127.0.0.1:8000/docs\n")
+    # Print environment-specific startup info for cleaner operational logs.
+    if _is_render_runtime():
+        render_url = os.getenv("RENDER_EXTERNAL_URL", "").strip().rstrip("/")
+        if render_url:
+            print(f"\n[startup] Render deployment detected. API URL: {render_url}")
+            print(f"[startup] Swagger UI: {render_url}/docs\n")
+        else:
+            print("\n[startup] Render deployment detected. API bound to $PORT.")
+            print("[startup] Swagger UI: <your-render-service-url>/docs\n")
+    else:
+        print("\n[startup] Local development mode detected.")
+        print("[startup] API URL: http://127.0.0.1:8000")
+        print("[startup] Swagger UI: http://127.0.0.1:8000/docs\n")
     yield
 
 
