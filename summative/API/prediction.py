@@ -1,7 +1,34 @@
-"""Predict East Africa CO2 emissions using the linear regression model.
+"""Prediction and shared model utilities for East Africa CO2 emissions.
 
-This script imitates the notebook preprocessing so predictions are compatible
-with the trained model saved in linear_regression/final_model.
+How notebook logic is used in this script:
+- The training notebook defines the core preprocessing pipeline: East Africa filtering,
+    numeric coercion, sparse-column removal, median imputation, feature selection,
+    scaling numeric fields, and one-hot encoding country.
+- `build_model_training_frame` re-implements those same data-cleaning and feature
+    engineering steps so retraining in the API remains aligned with notebook behavior.
+- `fit_and_save_linear_model` applies the same final feature set and preprocessing
+    pattern used during notebook training, then saves artifacts (`scaler`, encoded
+    training columns, numeric feature list) alongside the model.
+- At inference time, `EmissionsPredictor` uses saved artifacts first so request
+    preprocessing matches the trained model exactly. If artifacts are unavailable,
+    it rebuilds preprocessing references from the notebook-equivalent pipeline.
+
+Function and class purpose map:
+- build_model_training_frame: Build cleaned/model-ready training data from raw CSV,
+    with optional extra labeled rows.
+- fit_and_save_linear_model: Train LinearRegression and persist both model and
+    preprocessing artifacts.
+- PredictionInput.from_payload: Validate and coerce raw request dictionaries.
+- PredictionInput.to_model_row: Convert validated input into model column names.
+- EmissionsPredictor: Load model and transform inputs consistently for inference.
+- EmissionsPredictor._load_preprocessing_artifacts: Load persisted scaler/schema.
+- EmissionsPredictor._fit_preprocessing_reference: Rebuild fallback scaler/schema.
+- EmissionsPredictor._prepare_input: Validate, scale, one-hot encode, and align
+    payload rows to training columns.
+- EmissionsPredictor.predict_one: Score one input row.
+- EmissionsPredictor.predict_many: Score multiple input rows.
+- _read_payload: Read CLI input from inline JSON or JSON file.
+- main: CLI entrypoint for single or batch prediction output.
 """
 
 # import required libraries
@@ -14,9 +41,20 @@ from typing import Any
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
 
+# Define constants for column names and features used in the model.
 TARGET_COL = "Total CO2 Emission excluding LUCF (Mt)"
+FINAL_FEATURES = [
+    "Country",
+    "Year",
+    "Population",
+    "Transportation (Mt)",
+    "Manufacturing/Construction (Mt)",
+    "Electricity/Heat (Mt)",
+    "Building (Mt)",
+]
 
 # Raw request schema expected by the predictor endpoint/script.
 REQUIRED_INPUT_FIELDS = [
@@ -28,6 +66,108 @@ REQUIRED_INPUT_FIELDS = [
     "Electricity/Heat (Mt)",
     "Building (Mt)",
 ]
+
+
+def build_model_training_frame(data_path: Path, extra_rows_path: Path | None = None) -> pd.DataFrame:
+    """Build the model-ready training frame using notebook-equivalent preprocessing."""
+    if not data_path.exists():
+        raise FileNotFoundError(f"Dataset not found: {data_path}")
+
+    df = pd.read_csv(data_path)
+    df = df.replace(["N/A", "na", "NA", ""], np.nan)
+    df_east = df[df["Sub-Region"] == "Eastern Africa"].copy()
+
+    numeric_cols = [
+        "Year",
+        "Population",
+        "GDP PER CAPITA (USD)",
+        "GDP PER CAPITA PPP (USD)",
+        "Area (Km2)",
+        "Transportation (Mt)",
+        "Other Fuel Combustion (Mt)",
+        "Manufacturing/Construction (Mt)",
+        "Land-Use Change and Forestry (Mt)",
+        "Industrial Processes (Mt)",
+        "Fugitive Emissions (Mt)",
+        "Energy (Mt)",
+        "Electricity/Heat (Mt)",
+        "Bunker Fuels (Mt)",
+        "Building (Mt)",
+        TARGET_COL,
+    ]
+
+    for col in numeric_cols:
+        if col in df_east.columns:
+            df_east[col] = pd.to_numeric(df_east[col], errors="coerce")
+
+    if "Fugitive Emissions (Mt)" in df_east.columns:
+        df_east = df_east.drop(columns=["Fugitive Emissions (Mt)"])
+        if "Fugitive Emissions (Mt)" in numeric_cols:
+            numeric_cols.remove("Fugitive Emissions (Mt)")
+
+    predictor_cols = [c for c in numeric_cols if c != TARGET_COL and c in df_east.columns]
+    country_medians = df_east.groupby("Country")[predictor_cols].transform("median")
+    df_east[predictor_cols] = df_east[predictor_cols].fillna(country_medians)
+    df_east[predictor_cols] = df_east[predictor_cols].fillna(
+        df_east[predictor_cols].median(numeric_only=True)
+    )
+    df_east = df_east.dropna(subset=[TARGET_COL])
+
+    fe_df = df_east.copy()
+    for col in [
+        "Code",
+        "Total CO2 Emission including LUCF (Mt)",
+        "Fugitive Emissions (Mt)",
+        "GDP PER CAPITA PPP (USD)",
+    ]:
+        if col in fe_df.columns:
+            fe_df = fe_df.drop(columns=[col])
+
+    fe_df["Population Density (people per km2)"] = fe_df["Population"] / fe_df["Area (Km2)"]
+    model_df = fe_df[FINAL_FEATURES + [TARGET_COL]].copy()
+
+    if extra_rows_path is not None and extra_rows_path.exists():
+        extra_df = pd.read_csv(extra_rows_path)
+        missing = [c for c in (FINAL_FEATURES + [TARGET_COL]) if c not in extra_df.columns]
+        if missing:
+            raise ValueError(f"Extra training rows missing columns: {missing}")
+        extra_df = extra_df[FINAL_FEATURES + [TARGET_COL]].copy()
+        model_df = pd.concat([model_df, extra_df], ignore_index=True)
+
+    return model_df
+
+
+def fit_and_save_linear_model(
+    model_df: pd.DataFrame,
+    model_path: Path,
+    artifact_path: Path,
+) -> tuple[LinearRegression, dict[str, Any]]:
+    """Train the linear model and persist model + preprocessing artifacts."""
+    x = model_df[FINAL_FEATURES].copy()
+    y = model_df[TARGET_COL].copy()
+
+    scaler = StandardScaler()
+    x_scaled = x.copy()
+    numeric_features = [c for c in FINAL_FEATURES if c != "Country"]
+    x_scaled[numeric_features] = scaler.fit_transform(x[numeric_features])
+    x_model = pd.get_dummies(x_scaled, columns=["Country"], drop_first=True)
+
+    model = LinearRegression()
+    model.fit(x_model, y)
+
+    model_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, model_path)
+
+    artifacts: dict[str, Any] = {
+        "model": model,
+        "scaler": scaler,
+        "training_columns": x_model.columns.tolist(),
+        "numeric_features": numeric_features,
+        "final_features": FINAL_FEATURES,
+    }
+    joblib.dump(artifacts, artifact_path)
+
+    return model, artifacts
 
 
 @dataclass(frozen=True)
@@ -99,11 +239,12 @@ class PredictionInput:
         }
 
 class EmissionsPredictor:
-    """Loads the linear regression model and prepares data the same way as the notebook."""
+    """Load the model and apply artifact-aligned preprocessing for inference."""
 
-    def __init__(self, data_path: Path, model_path: Path) -> None:
+    def __init__(self, data_path: Path, model_path: Path, artifact_path: Path | None = None) -> None:
         self.data_path = data_path
         self.model_path = model_path
+        self.artifact_path = artifact_path
 
         if not self.data_path.exists():
             raise FileNotFoundError(f"Dataset not found: {self.data_path}")
@@ -116,85 +257,32 @@ class EmissionsPredictor:
         self.categorical_features: list[str] = ["Country"]
         self.training_columns: list[str] = []
 
-        # Fit preprocessing artifacts once so all incoming requests reuse them.
-        self._fit_preprocessing_reference()
+        # Prefer persisted preprocessing artifacts so inference exactly matches training.
+        if self.artifact_path is not None and self.artifact_path.exists():
+            self._load_preprocessing_artifacts()
+        else:
+            # Fallback for first-run or local script usage without artifacts.
+            self._fit_preprocessing_reference()
+
+    def _load_preprocessing_artifacts(self) -> None:
+        """Load scaler/schema artifacts generated during training."""
+        artifacts = joblib.load(self.artifact_path)
+
+        scaler = artifacts.get("scaler")
+        training_columns = artifacts.get("training_columns")
+        numeric_features = artifacts.get("numeric_features")
+
+        if scaler is None or training_columns is None or numeric_features is None:
+            raise ValueError("Artifact file is missing required preprocessing keys")
+
+        self.scaler = scaler
+        self.training_columns = list(training_columns)
+        self.numeric_features = list(numeric_features)
 
     def _fit_preprocessing_reference(self) -> None:
         """Rebuild preprocessing artifacts from the training dataset."""
-        # Load the same source data used during model development.
-        df = pd.read_csv(self.data_path)
-        df = df.replace(["N/A", "na", "NA", ""], np.nan)
-        df_east = df[df["Sub-Region"] == "Eastern Africa"].copy()
-
-        numeric_cols = [
-            "Year",
-            "Population",
-            "GDP PER CAPITA (USD)",
-            "GDP PER CAPITA PPP (USD)",
-            "Area (Km2)",
-            "Transportation (Mt)",
-            "Other Fuel Combustion (Mt)",
-            "Manufacturing/Construction (Mt)",
-            "Land-Use Change and Forestry (Mt)",
-            "Industrial Processes (Mt)",
-            "Fugitive Emissions (Mt)",
-            "Energy (Mt)",
-            "Electricity/Heat (Mt)",
-            "Bunker Fuels (Mt)",
-            "Building (Mt)",
-            TARGET_COL,
-        ]
-
-        for col in numeric_cols:
-            if col in df_east.columns:
-                df_east[col] = pd.to_numeric(df_east[col], errors="coerce")
-
-        # Mirror notebook cleanup for sparse columns.
-        if "Fugitive Emissions (Mt)" in df_east.columns:
-            df_east = df_east.drop(columns=["Fugitive Emissions (Mt)"])
-            if "Fugitive Emissions (Mt)" in numeric_cols:
-                numeric_cols.remove("Fugitive Emissions (Mt)")
-
-        # Country-wise median imputation for predictors (excluding target).
-        predictor_cols = [c for c in numeric_cols if c != TARGET_COL and c in df_east.columns]
-        country_medians = df_east.groupby("Country")[predictor_cols].transform("median")
-        df_east[predictor_cols] = df_east[predictor_cols].fillna(country_medians)
-
-        # Global median fallback for any remaining missing predictor values.
-        df_east[predictor_cols] = df_east[predictor_cols].fillna(
-            df_east[predictor_cols].median(numeric_only=True)
-        )
-
-        # Keep only rows with target available for supervised learning.
-        df_east = df_east.dropna(subset=[TARGET_COL])
-
-        # Repeat feature-engineering drops and derived column creation.
-        fe_df = df_east.copy()
-        drop_candidates = [
-            "Code",
-            "Total CO2 Emission including LUCF (Mt)",
-            "Fugitive Emissions (Mt)",
-            "GDP PER CAPITA PPP (USD)",
-        ]
-        for col in drop_candidates:
-            if col in fe_df.columns:
-                fe_df = fe_df.drop(columns=[col])
-
-        fe_df["Population Density (people per km2)"] = (
-            fe_df["Population"] / fe_df["Area (Km2)"]
-        )
-
-        final_features = [
-            "Country",
-            "Year",
-            "Population",
-            "Transportation (Mt)",
-            "Manufacturing/Construction (Mt)",
-            "Electricity/Heat (Mt)",
-            "Building (Mt)",
-        ]
-
-        x = fe_df[final_features].copy()
+        model_df = build_model_training_frame(self.data_path)
+        x = model_df[FINAL_FEATURES].copy()
         self.numeric_features = [c for c in x.columns if c not in self.categorical_features]
 
         # Fit scaler on training-reference data so runtime inputs use same transform.
@@ -297,8 +385,13 @@ def main() -> None:
     linear_regression_dir = base_dir.parent / "linear_regression"
     data_path = linear_regression_dir / "data" / "africa-co2-emissions.csv"
     model_path = linear_regression_dir / "final_model" / "best_linear_regression_model.joblib"
+    artifact_path = linear_regression_dir / "final_model" / "fastapi_model_artifacts.joblib"
 
-    predictor = EmissionsPredictor(data_path=data_path, model_path=model_path)
+    predictor = EmissionsPredictor(
+        data_path=data_path,
+        model_path=model_path,
+        artifact_path=artifact_path,
+    )
     payload = _read_payload(args.input_json, args.input_file)
 
     if isinstance(payload, list):
