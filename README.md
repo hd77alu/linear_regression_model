@@ -25,6 +25,7 @@ This project uses historical country-level CO2 emissions and socioeconomic indic
 │   │   ├── prediction.py
 │   │   ├── requirements.txt
 │   ├── FlutterApp/
+│   │   ├── east_africa_co2_prediction_mobile_app
 │   └── linear_regression/
 │       ├── multivariate.ipynb
 │       ├── data/
