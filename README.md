@@ -158,15 +158,15 @@ This step ensures that the model receives clean, consistent numeric inputs and t
 
 ### 3. Exploratory Data Analysis (EDA)
 EDA was used to validate assumptions and guide feature decisions:
-1. Correlation heatmap to inspect relationships between predictors and the target.
+A. Correlation heatmap to inspect relationships between predictors and the target.
 
 ![Correlation heatmap](https://github.com/hd77alu/Portfolio101/blob/a64e5b063f134628598806aa80e6a1d73e127f36/images/eastAfrica-dataset-heatmap.png)
 
-2. Histograms to understand the distribution and spread of key variables.
+B. Histograms to understand the distribution and spread of key variables.
 
 ![Histograms for variable distributions](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-variable-distributions.png)
 
-3. Scatter plots to inspect directional patterns and potential linear relationships.
+C. Scatter plots to inspect directional patterns and potential linear relationships.
 
 ![Scatterplots (relationship view)](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-scatterplots.png)
 
@@ -222,7 +222,7 @@ The best-performing model (lowest loss) was selected automatically from the eval
 
 ![Linear Regression Fitted Line on Test Data](https://github.com/hd77alu/Portfolio101/blob/5724876240ffa2bb261a861e1d484fb160a3991e/images/eastAfrica-dataset-fitted-line.png)
 
-A dedicated scatter plot was implemented to show the fitted linear relationship after training the Linear Regression model.
+A scatter plot was implemented to show the fitted linear relationship after training the Linear Regression model.
 For clarity, the fitted line is visualized against a chosen feature slice (Transportation (Mt)) while other features are held at baseline values.
 This provides a readable 2D interpretation of a multivariate model.
 
