@@ -248,7 +248,7 @@ The API service in `summative/API/app.py`:
 4. Supports CORS configuration through the `ALLOWED_ORIGINS` environment variable.
 
 ### 10. Flutter Mobile Application
-![CO2-Predictor-App](https://github.com/hd77alu/Portfolio101/blob/778d9b58a999677ab7a8891cc38a7c8ca147e8ec/images/CO2-Predictor-APP.png)
+![CO2-Predictor-App](https://github.com/hd77alu/Portfolio101/blob/84550219c7af35ef097b8a909741b55841922f69/images/CO2-Predictor-APP.png)
 
 A Flutter app was built to provide a user-friendly interface for interacting with the prediction API.
 The app is located at `summative/FlutterApp/east_africa_co2_prediction_mobile_app` and connects to the deployed API at `https://linear-regression-model-wk1e.onrender.com`.
