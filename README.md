@@ -93,7 +93,7 @@ python -m uvicorn summative.API.app:app --reload --host 0.0.0.0 --port 8000
 
 1. Open `http://127.0.0.1:8000/docs` or use deplyed Render Swagger UI: `https://linear-regression-model-wk1e.onrender.com/docs`.
 2. Expand `POST /predict` and click **Try it out**.
-3. Use a sample payload:
+- Use a sample payload:
 ```json
 {
 	"country": "Kenya",
@@ -105,9 +105,37 @@ python -m uvicorn summative.API.app:app --reload --host 0.0.0.0 --port 8000
 	"building_mt": 1.7
 }
 ```
-4. Click **Execute** and inspect `prediction_mt` in the response.
-5. For multi-row scoring, test `POST /predict/batch`.
-6. For model refresh with labeled rows, test `POST /retrain`.
+- Click **Execute** and inspect `prediction_mt` in the response.
+3. Expand `POST /predict/batch` and click **Try it out**.
+- Use a sample payload:
+```json
+{
+  "rows": [
+    { "country": "Kenya", "year": 2020, "population": 53771300, "transportation_mt": 5.1, "manufacturing_construction_mt": 2.3, "electricity_heat_mt": 3.8, "building_mt": 1.7 },
+    { "country": "Uganda", "year": 2019, "population": 45741000, "transportation_mt": 3.2, "manufacturing_construction_mt": 1.1, "electricity_heat_mt": 1.5, "building_mt": 0.9 }
+  ]
+}
+```
+- Click **Execute** and inspect `prediction_mt` in the response.
+4. For model refresh with labeled rows, test `POST /retrain`.
+- Sample payload:
+```json
+{
+  "persist_new_rows": false,
+  "rows": [
+    {
+      "country": "Kenya",
+      "year": 2021,
+      "population": 54985711,
+      "transportation_mt": 5.3,
+      "manufacturing_construction_mt": 2.5,
+      "electricity_heat_mt": 3.9,
+      "building_mt": 1.8,
+      "target_mt": 12.4
+    }
+  ]
+}
+```
 
 ## Project Implementation
 

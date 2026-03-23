@@ -83,7 +83,9 @@ class _PredictionPageState extends State<PredictionPage> {
 
   @override
   void dispose() {
-    for (final r in _rows) r.dispose();
+    for (final r in _rows) {
+      r.dispose();
+    }
     super.dispose();
   }
 
