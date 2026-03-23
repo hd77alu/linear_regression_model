@@ -158,6 +158,7 @@ This step ensures that the model receives clean, consistent numeric inputs and t
 
 ### 3. Exploratory Data Analysis (EDA)
 EDA was used to validate assumptions and guide feature decisions:
+
 A. Correlation heatmap to inspect relationships between predictors and the target.
 
 ![Correlation heatmap](https://github.com/hd77alu/Portfolio101/blob/a64e5b063f134628598806aa80e6a1d73e127f36/images/eastAfrica-dataset-heatmap.png)
