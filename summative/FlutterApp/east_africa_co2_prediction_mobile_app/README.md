@@ -1,4 +1,4 @@
-# East Africa CO₂ Emission Predictor — Flutter App
+# East Africa CO₂ Emission Predictor
 
 ## Description
 

@@ -91,7 +91,7 @@ python -m uvicorn summative.API.app:app --reload --host 0.0.0.0 --port 8000
 
 ## Test API with Swagger UI
 
-1. Open `http://127.0.0.1:8000/docs`.
+1. Open `http://127.0.0.1:8000/docs` or use deplyed Render Swagger UI: `https://linear-regression-model-wk1e.onrender.com/docs`.
 2. Expand `POST /predict` and click **Try it out**.
 3. Use a sample payload:
 ```json
@@ -218,3 +218,19 @@ The API service in `summative/API/app.py`:
 2. Uses Pydantic request schemas for validation.
 3. Delegates model/preprocessing logic to `prediction.py`.
 4. Supports CORS configuration through the `ALLOWED_ORIGINS` environment variable.
+
+### 10. Flutter Mobile Application
+A Flutter app was built to provide a user-friendly interface for interacting with the prediction API.
+The app is located at `summative/FlutterApp/east_africa_co2_prediction_mobile_app` and connects to the deployed API at `https://linear-regression-model-wk1e.onrender.com`.
+
+The app is structured as a single prediction page with two modes:
+1. **Single Entry mode** — the user fills in 7 input fields (Country, Year, Population, Transportation, Manufacturing/Construction, Electricity/Heat, Building) and submits to `POST /predict`. The predicted CO₂ emission value is displayed in a result box below the form.
+2. **Multiple Entries mode** — the user adds as many entry cards as needed, each with the same 7 fields, and submits all at once to `POST /predict/batch`. Results are displayed as expandable cards (expanded by default), one per entry, each showing the predicted emission value.
+
+Key implementation details:
+- All fields are validated before submission — required check, numeric type check, and non-negative value check.
+- The Predict button is disabled and shows a loading spinner while a request is in flight.
+- API errors and network failures are caught and displayed in a dedicated red-bordered error box.
+- A 30-second request timeout is applied to handle Render free-tier cold starts.
+- The UI uses a dark blue (`#0A1E3C`) background with yellow (`#FFC107`) accents throughout.
+- State is managed using `setState` within a single `StatefulWidget`, keeping the implementation simple and self-contained.
