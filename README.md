@@ -265,3 +265,5 @@ Key implementation details:
 - A 30-second request timeout is applied to handle Render free-tier cold starts.
 - The UI uses a dark blue (`#0A1E3C`) background with yellow (`#FFC107`) accents throughout.
 - State is managed using `setState` within a single `StatefulWidget`, keeping the implementation simple and self-contained.
+
+For Flutter setup and run instructions, see [Flutter Setup Instructions](summative/FlutterApp/east_africa_co2_prediction_mobile_app/README.md).
