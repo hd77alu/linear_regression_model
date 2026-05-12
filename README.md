@@ -4,7 +4,6 @@
 - My mission focuses on Climate Change and how to use technologies to address environmental challenges in Africa.
 - The problem addressed here is the prediction of CO2 emissions trends to support improved climate-mitigation planning.
 - The goal is to contribute practical, data-driven tools that support Africa's efforts in effective climate adaptation.
-- [Demo Video Link](https://go.screenpal.com/watch/cOeTFRnTFQB)
 
 ## Dataset Information
 This project uses historical country-level CO2 emissions and socioeconomic indicators from 2000 to 2020 to create a model that predicts total CO2 emissions excluding LUCF in East Africa.
